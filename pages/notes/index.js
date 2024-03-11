@@ -19,34 +19,57 @@ import { useEffect, useState } from "react";
 import { useQueries } from "@/hooks/useQueries";
 import useSWR from 'swr';
 import fetcher from "@/utils/fetcher";
+import Swal from "sweetalert2";
+import ModalForm from "@/components/common/modalForm";
 
 const LayoutComponent = dynamic(() => import('@/layout'), {
   loading: () => <p>Loading...</p>,
 })
 
-export default function Notes({ }) {
+export default function Notes({ notes }) {
 
   const router = useRouter();
-  //const [notes, setNotes] = useState(); 
-  //const { data: notes } = useQueries({ prefixUrl: "https://paace-f178cafcae7b.nevacloud.io/api/notes" });
-  const { data: notes, isLoading } = useSWR("https://paace-f178cafcae7b.nevacloud.io/api/notes", fetcher, {
-    refreshInterval: 10,
-    revalidateOnFocus: true,
+  const [note, setNote] = useState(notes); 
+  const [isOpen, setIsOpen] = useState(false);
+  const [editObj, setEditObj] = useState({
+    isEdit: false, 
+    id: "",
   });
 
-  const HandleDelete = async (id) => {
-    try {
-      const response = await fetch(
-        `https://paace-f178cafcae7b.nevacloud.io/api/notes/delete/${id}`,
-        {
-        method: "DELETE",
-        });
-        const result = await response.json();
-        if (result?.success) {
-        router.reload();
-        }
-    } catch (error) {}
+  //const { data: notes } = useQueries({ prefixUrl: "https://paace-f178cafcae7b.nevacloud.io/api/notes" });
+  // const { data: notes, isLoading } = useSWR("https://paace-f178cafcae7b.nevacloud.io/api/notes", fetcher, {
+  //   refreshInterval: 10,
+  //   revalidateOnFocus: true,
+  // });
+
+  const getData = async () => {
+    const res = await fetch("/api/notes");
+    const listNotes = await res.json();
+    setNote(listNotes);
   };
+
+  const HandleDelete = async (id) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(`/api/notes/delete/${id}`);
+          const result = await response.json();
+          if (result?.success) getData();
+        } catch (error) {}
+      }
+    });
+  };
+
+  const HandleModal = () => setIsOpen(!isOpen);
+
   // useEffect(() => {
   //   async function fetchingData() {
   //     const res = await fetch("https://paace-f178cafcae7b.nevacloud.io/api/notes");
@@ -72,14 +95,19 @@ export default function Notes({ }) {
         <Flex justifyContent="end" marginBottom="4">
           <Button
             colorScheme="blue"
-            onClick={() => router.push("/notes/add")}
+            onClick={() => {
+              setEditObj({ ...editObj, isEdit: false, id: "" })
+              HandleModal(); 
+            } //router.push("/notes/add")
+          }
           >
           Add Notes
           </Button>
         </Flex>
+        <ModalForm isOpen={isOpen} onClose={HandleModal} getData={getData} editObj={editObj}/>
         <Flex>
-          <Grid templateColumns="repeat(3, 1fr)" gap={5}>
-            {notes?.data?.map((item) => (
+          <Grid templateColumns="repeat(3, 1fr)" gap={5} m={4}>
+            {note?.data?.map((item) => (
               <GridItem key={item.id}>
                 <Card>
                   <CardHeader>
@@ -90,7 +118,11 @@ export default function Notes({ }) {
                   </CardBody>
                   <CardFooter justify="space-between" flexWrap="wrap">
                   <Button
-                    onClick={() => router.push(`/notes/edit/${item?.id}`)}
+                    onClick={() => {
+                      //router.push(`/notes/edit/${item?.id}`)
+                      setEditObj({ ...editObj, isEdit: true, id: item.id })
+                      HandleModal();
+                    }}
                     flex="1"
                     variant="ghost"
                   >
@@ -114,11 +146,12 @@ export default function Notes({ }) {
     </LayoutComponent>
   );
 };
+
 //SSG Static Set Generator
 export async function getStaticProps() {
-  const res = await fetch('https://paace-f178cafcae7b.nevacloud.io/api/notes');
+  const res = await fetch('http://localhost:3000/api/notes');
   const notes = await res.json();
-  return { props: { notes }, revalidate: 10 }
+  return { props: { notes } }
 };
 
 Notes.propTypes = {

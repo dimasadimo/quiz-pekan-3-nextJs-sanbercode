@@ -18,7 +18,7 @@ export default function DetailNotes({ note }) {
 };
 
 export async function getStaticPaths() {
-  const res = await fetch('https://paace-f178cafcae7b.nevacloud.io/api/notes');
+  const res = await fetch('/api/notes');
   const notes = await res.json();
 
   const paths = notes.data.map((item) => ({
@@ -35,7 +35,7 @@ export async function getStaticPaths() {
 
 export async function getStaticProps(context) {
   const { id } = context.params;
-  const res = await fetch(`https://paace-f178cafcae7b.nevacloud.io/api/notes/${id}`);
+  const res = await fetch(`/api/notes/${id}`);
   const note = await res.json();
   return { props: { note }, revalidate: 10 }
 };

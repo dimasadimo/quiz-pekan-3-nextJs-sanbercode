@@ -24,12 +24,9 @@ export default function EditNotes() {
   const HandleSubmit = async () => {
     try {
       const response = await fetch(
-        `https://paace-f178cafcae7b.nevacloud.io/api/notes/update/${id}`,
+        `/api/notes/edit/${id}`,
         {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ title: notes?.title, description: notes?.description }),
         }
       );
@@ -42,7 +39,7 @@ export default function EditNotes() {
 
   useEffect(() => {
     async function fetchingData() {
-      const res = await fetch(`https://paace-f178cafcae7b.nevacloud.io/api/notes/${id}`);
+      const res = await fetch(`/api/notes/${id}`);
       const listNotes = await res.json();
       setNotes(listNotes?.data)
     }
